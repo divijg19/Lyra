@@ -1,0 +1,48 @@
+# -----------------
+# Python
+# -----------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+.env
+
+# uv
+.uv/
+uv.lock
+
+# -----------------
+# FastAPI / backend
+# -----------------
+*.log
+
+# -----------------
+# Flutter / Dart
+# -----------------
+.build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+pubspec.lock
+
+# Android
+android/.gradle/
+android/app/build/
+
+# iOS
+ios/Pods/
+ios/Runner.xcworkspace/
+
+# -----------------
+# OS / Editor
+# -----------------
+.DS_Store
+.vscode/
+.idea/
+
+# -----------------
+# Misc
+# -----------------
+*.sqlite3

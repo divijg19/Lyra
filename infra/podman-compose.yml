@@ -1,0 +1,11 @@
+version: "3"
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: lyra
+      POSTGRES_PASSWORD: lyra
+      POSTGRES_DB: lyra
+    ports:
+      - "5432:5432"

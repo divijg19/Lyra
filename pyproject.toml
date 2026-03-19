@@ -1,0 +1,15 @@
+[project]
+name = "lyra"
+version = "0.0.1"
+description = "Lyra Music Intelligence Layer: Visualization, Analysis, Recommendation and Generation"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.135.1",
+    "httpx>=0.28.1",
+    "psycopg2-binary>=2.9.11",
+    "pydantic>=2.12.5",
+    "python-dotenv>=1.2.2",
+    "sqlalchemy>=2.0.48",
+    "uvicorn>=0.42.0",
+]
