@@ -1,29 +1,13 @@
-import 'dart:io';
-
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-String resolveLyraApiBaseUrl() {
-  const configuredBaseUrl = String.fromEnvironment('LYRA_API_BASE_URL');
-  if (configuredBaseUrl.isNotEmpty) {
-    return configuredBaseUrl;
-  }
-
-  if (Platform.isAndroid) {
-    return 'http://10.0.2.2:8000';
-  }
-
-  return 'http://localhost:8000';
-}
-
-final lyraApiBaseUrlProvider = Provider<String>((ref) {
-  return resolveLyraApiBaseUrl();
-});
+import '../auth/auth_notifier.dart';
+import 'base_url.dart';
+import 'secure_storage_provider.dart';
 
 final dioProvider = Provider<Dio>((ref) {
   final baseUrl = ref.watch(lyraApiBaseUrlProvider);
-
-  return Dio(
+  final dio = Dio(
     BaseOptions(
       baseUrl: baseUrl,
       connectTimeout: const Duration(seconds: 10),
@@ -34,4 +18,25 @@ final dioProvider = Provider<Dio>((ref) {
       },
     ),
   );
+
+  dio.interceptors.add(
+    InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        final storage = ref.read(secureStorageProvider);
+        final token = await storage.read(key: sessionTokenKey);
+        if (token != null && token.isNotEmpty) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
+        handler.next(options);
+      },
+      onError: (error, handler) async {
+        if (error.response?.statusCode == 401) {
+          await ref.read(authNotifierProvider.notifier).logout();
+        }
+        handler.next(error);
+      },
+    ),
+  );
+
+  return dio;
 });
