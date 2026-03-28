@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'dio_provider.dart';
+import 'base_url.dart';
 
 final spotifyLoginUriProvider = Provider<Uri>((ref) {
   final baseUrl = ref.watch(lyraApiBaseUrlProvider);

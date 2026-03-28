@@ -8,13 +8,26 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:lyra/core/auth/auth_notifier.dart';
 import 'package:lyra/main.dart';
+
+class _TestAuthNotifier extends AuthNotifier {
+  @override
+  Future<AuthState> build() async {
+    return const AuthState.unauthenticated();
+  }
+}
 
 void main() {
   testWidgets('redirects unauthenticated users to login', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const ProviderScope(child: MyApp()));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [authNotifierProvider.overrideWith(_TestAuthNotifier.new)],
+        child: const MyApp(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Lyra Login'), findsOneWidget);
