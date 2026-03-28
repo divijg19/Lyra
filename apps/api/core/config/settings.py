@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://lyra:lyra@localhost:5432/lyra"
     SPOTIFY_CLIENT_ID: str = ""
     SPOTIFY_CLIENT_SECRET: str = ""
+    SPOTIFY_REDIRECT_URI: str = "http://localhost:8000/auth/spotify/callback"
     ENVIRONMENT: str = "development"
 
     @computed_field  # type: ignore[prop-decorator]

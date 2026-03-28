@@ -2,7 +2,7 @@ version: "3"
 
 services:
   db:
-    image: pgvector/pgvector:pg15
+    image: docker.io/pgvector/pgvector:pg15
     environment:
       POSTGRES_USER: lyra
       POSTGRES_PASSWORD: lyra

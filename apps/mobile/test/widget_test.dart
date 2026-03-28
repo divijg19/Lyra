@@ -11,11 +11,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lyra/main.dart';
 
 void main() {
-  testWidgets('renders Lyra shell', (WidgetTester tester) async {
+  testWidgets('redirects unauthenticated users to login', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const ProviderScope(child: MyApp()));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    expect(find.text('Lyra'), findsOneWidget);
-    expect(find.text('Music intelligence, not playback.'), findsOneWidget);
+    expect(find.text('Lyra Login'), findsOneWidget);
+    expect(find.text('Continue with Spotify'), findsOneWidget);
   });
 }
