@@ -11,6 +11,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final client = ref.watch(dioProvider);
     final baseUrl = client.options.baseUrl;
+    final syncing = ref.watch(libraryNotifierProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Lyra')),
@@ -35,28 +36,42 @@ class HomeScreen extends ConsumerWidget {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 24),
-            Consumer(
-              builder: (context, ref, _) {
-                final syncing = ref.watch(libraryNotifierProvider);
-                return Column(
-                  children: [
-                    ElevatedButton(
-                      onPressed: () async {
-                        ref.read(libraryNotifierProvider.notifier).startSync();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Sync started...')),
-                        );
-                      },
-                      child: const Text('Sync Spotify Library'),
-                    ),
-                    if (syncing)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 12.0),
-                        child: CircularProgressIndicator(),
-                      ),
-                  ],
-                );
-              },
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ElevatedButton(
+                  onPressed: syncing
+                      ? null
+                      : () async {
+                          try {
+                            await ref
+                                .read(libraryNotifierProvider.notifier)
+                                .startSync();
+                            if (!context.mounted) {
+                              return;
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Sync started...')),
+                            );
+                          } catch (_) {
+                            if (!context.mounted) {
+                              return;
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Failed to start sync.'),
+                              ),
+                            );
+                          }
+                        },
+                  child: const Text('Sync Spotify Library'),
+                ),
+                if (syncing)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 12.0),
+                    child: CircularProgressIndicator(),
+                  ),
+              ],
             ),
           ],
         ),

@@ -21,7 +21,8 @@ class LibraryNotifier extends StateNotifier<bool> {
       final uri = ref.read(librarySyncUriProvider);
       await dio.post(uri.toString());
     } finally {
-      // briefly keep a small delay so UI can show spinner; callers may show snackbars
+      // Keep spinner visible briefly so the user receives immediate feedback.
+      await Future<void>.delayed(const Duration(milliseconds: 450));
       state = false;
     }
   }
