@@ -10,6 +10,7 @@ from core.models.base import Base
 
 if TYPE_CHECKING:
     from core.models.spotify import SpotifyAuth
+    from core.models.track import Track
 
 
 class User(Base):
@@ -35,5 +36,9 @@ class User(Base):
     spotify_auth: Mapped["SpotifyAuth | None"] = relationship(
         back_populates="user",
         uselist=False,
+        cascade="all, delete-orphan",
+    )
+    tracks: Mapped[list["Track"]] = relationship(
+        back_populates="user",
         cascade="all, delete-orphan",
     )

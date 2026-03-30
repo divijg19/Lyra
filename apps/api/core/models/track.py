@@ -31,9 +31,9 @@ class Track(Base):
     )
     spotify_id: Mapped[str] = mapped_column(String(128), nullable=False)
     title: Mapped[str] = mapped_column(String(512), nullable=False)
-    artist: Mapped[str] = mapped_column(String(512), nullable=True)
-    album: Mapped[str] = mapped_column(String(512), nullable=True)
-    added_at: Mapped[datetime] = mapped_column(
+    artist: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    album: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    added_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
