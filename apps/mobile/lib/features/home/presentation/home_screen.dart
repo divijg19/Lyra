@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/dio_provider.dart';
+import '../../library/library_notifier.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -32,6 +33,30 @@ class HomeScreen extends ConsumerWidget {
             Text(
               'API base URL: $baseUrl',
               style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 24),
+            Consumer(
+              builder: (context, ref, _) {
+                final syncing = ref.watch(libraryNotifierProvider);
+                return Column(
+                  children: [
+                    ElevatedButton(
+                      onPressed: () async {
+                        ref.read(libraryNotifierProvider.notifier).startSync();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Sync started...')),
+                        );
+                      },
+                      child: const Text('Sync Spotify Library'),
+                    ),
+                    if (syncing)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 12.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                  ],
+                );
+              },
             ),
           ],
         ),

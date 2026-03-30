@@ -6,3 +6,8 @@ final spotifyLoginUriProvider = Provider<Uri>((ref) {
   final baseUrl = ref.watch(lyraApiBaseUrlProvider);
   return Uri.parse('$baseUrl/auth/spotify/login');
 });
+
+final librarySyncUriProvider = Provider<Uri>((ref) {
+  final baseUrl = ref.watch(lyraApiBaseUrlProvider);
+  return Uri.parse('$baseUrl/library/sync');
+});
