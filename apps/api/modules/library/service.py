@@ -39,17 +39,20 @@ async def sync_user_library(user_id: UUID, db_session_maker: Any) -> None:
 
                 added_at_raw = item.get("added_at")
                 added_at = _parse_spotify_datetime(added_at_raw)
+                if added_at is None:
+                    continue
+
+                artists = [
+                    a.get("name") for a in track.get("artists", []) if a.get("name")
+                ]
+                artist = ", ".join(artists) if artists else "Unknown Artist"
 
                 rows.append(
                     {
                         "user_id": user_id,
                         "spotify_id": spotify_id,
                         "title": title,
-                        "artist": ", ".join(
-                            [a.get("name") for a in track.get("artists", [])]
-                        )
-                        if track.get("artists")
-                        else None,
+                        "artist": artist,
                         "album": track.get("album", {}).get("name"),
                         "added_at": added_at,
                     }
@@ -73,6 +76,27 @@ async def sync_user_library(user_id: UUID, db_session_maker: Any) -> None:
             await session.execute(stmt)
 
         await session.commit()
+
+
+async def get_user_tracks(
+    user_id: UUID,
+    db: AsyncSession,
+    skip: int = 0,
+    limit: int = 50,
+) -> list[Track]:
+    stmt = (
+        select(Track)
+        .where(
+            Track.user_id == user_id,
+            Track.added_at.is_not(None),
+            Track.artist.is_not(None),
+        )
+        .order_by(Track.added_at.desc())
+        .offset(skip)
+        .limit(limit)
+    )
+    result = await db.scalars(stmt)
+    return list(result.all())
 
 
 def _parse_spotify_datetime(value: Any) -> datetime | None:
