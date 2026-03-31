@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routers import auth, library
+from .routers import auth, library, playlists
 
 
 def create_app() -> FastAPI:
@@ -22,6 +22,7 @@ def create_app() -> FastAPI:
     )
     app.include_router(auth.router)
     app.include_router(library.router)
+    app.include_router(playlists.router)
 
     @app.get("/health")
     async def health() -> dict[str, str]:
