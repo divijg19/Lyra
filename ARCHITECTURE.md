@@ -68,7 +68,7 @@
 ```bash
 lyra/
 ├── apps/
-│   ├── mobile/        # Flutter app
+│   ├── flutter/       # Flutter apps
 │   └── api/           # FastAPI backend
 │
 ├── internal/

@@ -2,34 +2,45 @@
 # Python
 # -----------------
 __pycache__/
+*.ruff_cache/
 *.pyc
 *.pyo
 *.pyd
 .venv/
 .env
+*.log
+*.class
+*.swp
 
 # uv
 .uv/
 uv.lock
 
 # -----------------
-# FastAPI / backend
-# -----------------
-*.log
-
-# -----------------
 # Flutter / Dart
 # -----------------
 .build/
+.buildlog/
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
 .packages
-pubspec.lock
+.pub-cache/
+.pub/
+build/
+coverage/
+**/doc/api/
+**/ios/Flutter/.last_build_id
+app.*.symbols
+app.*.map.json
+migrate_working_dir/
 
 # Android
 android/.gradle/
 android/app/build/
+android/app/debug/
+android/app/profile/
+android/app/release/
 
 # iOS
 ios/Pods/
@@ -39,10 +50,21 @@ ios/Runner.xcworkspace/
 # OS / Editor
 # -----------------
 .DS_Store
+.atom/
+.history
+.svn/
+.swiftpm/
 .vscode/
 .idea/
+*.iml
+*.ipr
+*.iws
 
 # -----------------
 # Misc
 # -----------------
 *.sqlite3
+
+# Ignore Flutter ephemeral directories and generated native glue
+**/flutter/ephemeral/
+**/ephemeral/

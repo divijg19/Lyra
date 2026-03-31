@@ -4,16 +4,13 @@ import '../../core/network/dio_provider.dart';
 import '../../core/network/lyra_endpoints.dart';
 import 'models/track.dart';
 
-final libraryNotifierProvider = StateNotifierProvider<LibraryNotifier, bool>((
-  ref,
-) {
-  return LibraryNotifier(ref);
-});
+final libraryNotifierProvider = NotifierProvider<LibraryNotifier, bool>(
+  LibraryNotifier.new,
+);
 
-class LibraryNotifier extends StateNotifier<bool> {
-  LibraryNotifier(this.ref) : super(false);
-
-  final Ref ref;
+class LibraryNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
 
   Future<void> startSync() async {
     state = true;
