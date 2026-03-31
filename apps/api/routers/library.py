@@ -37,6 +37,7 @@ async def start_library_sync(
 async def list_library_tracks(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
+    q: str | None = Query(default=None),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=100),
 ) -> list[TrackResponse]:
@@ -45,5 +46,6 @@ async def list_library_tracks(
         db=db,
         skip=skip,
         limit=limit,
+        search_query=q,
     )
     return [TrackResponse.model_validate(track) for track in tracks]

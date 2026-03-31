@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -83,18 +83,23 @@ async def get_user_tracks(
     db: AsyncSession,
     skip: int = 0,
     limit: int = 50,
+    search_query: str | None = None,
 ) -> list[Track]:
-    stmt = (
-        select(Track)
-        .where(
-            Track.user_id == user_id,
-            Track.added_at.is_not(None),
-            Track.artist.is_not(None),
-        )
-        .order_by(Track.added_at.desc())
-        .offset(skip)
-        .limit(limit)
+    stmt = select(Track).where(
+        Track.user_id == user_id,
+        Track.added_at.is_not(None),
+        Track.artist.is_not(None),
     )
+
+    if search_query:
+        stmt = stmt.where(
+            or_(
+                Track.title.ilike(f"%{search_query}%"),
+                Track.artist.ilike(f"%{search_query}%"),
+            )
+        )
+
+    stmt = stmt.order_by(Track.added_at.desc()).offset(skip).limit(limit)
     result = await db.scalars(stmt)
     return list(result.all())
 
