@@ -39,7 +39,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         return null;
       }
 
-      final isAuthenticated = authState.valueOrNull?.isAuthenticated == true;
+      final isAuthenticated = authState.asData?.value.isAuthenticated == true;
 
       if (!isAuthenticated && !atLogin && !atCallback) {
         return '/login';
