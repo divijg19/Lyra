@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from core.models.base import Base
 
 if TYPE_CHECKING:
+    from core.models.playlist import Playlist, PlaylistTrack
     from core.models.user import User
 
 
@@ -45,3 +46,15 @@ class Track(Base):
     )
 
     user: Mapped["User"] = relationship(back_populates="tracks")
+    playlist_tracks: Mapped[list["PlaylistTrack"]] = relationship(
+        "PlaylistTrack",
+        back_populates="track",
+        cascade="all, delete-orphan",
+        overlaps="playlists,tracks",
+    )
+    playlists: Mapped[list["Playlist"]] = relationship(
+        "Playlist",
+        secondary="playlist_tracks",
+        back_populates="tracks",
+        overlaps="playlist_tracks,playlist,track",
+    )

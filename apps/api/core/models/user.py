@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from core.models.base import Base
 
 if TYPE_CHECKING:
+    from core.models.playlist import Playlist
     from core.models.spotify import SpotifyAuth
     from core.models.track import Track
 
@@ -39,6 +40,10 @@ class User(Base):
         cascade="all, delete-orphan",
     )
     tracks: Mapped[list["Track"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    playlists: Mapped[list["Playlist"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
     )

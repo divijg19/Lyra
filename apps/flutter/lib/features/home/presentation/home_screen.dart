@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../library/library_notifier.dart';
+import '../../library/models/track.dart';
+import '../../playlists/playlists_notifier.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -28,6 +30,113 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _searchDebounce = Timer(const Duration(milliseconds: 500), () {
       ref.read(tracksNotifierProvider.notifier).searchTracks(value);
     });
+  }
+
+  Future<void> _showAddToPlaylistSheet(Track track) async {
+    await ref.read(playlistsNotifierProvider.notifier).fetchPlaylists();
+    if (!mounted) {
+      return;
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Consumer(
+            builder: (_, ref, _) {
+              final playlistsState = ref.watch(playlistsNotifierProvider);
+
+              return playlistsState.when(
+                loading: () => const SizedBox(
+                  height: 220,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (error, _) => Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Failed to load playlists.'),
+                      const SizedBox(height: 8),
+                      Text('$error'),
+                      const SizedBox(height: 12),
+                      FilledButton(
+                        onPressed: () {
+                          ref
+                              .read(playlistsNotifierProvider.notifier)
+                              .fetchPlaylists();
+                        },
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
+                data: (playlists) {
+                  if (playlists.isEmpty) {
+                    return const SizedBox(
+                      height: 180,
+                      child: Center(
+                        child: Text(
+                          'No playlists available. Create one first.',
+                        ),
+                      ),
+                    );
+                  }
+
+                  return ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: playlists.length,
+                    separatorBuilder: (_, _) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final playlist = playlists[index];
+                      return ListTile(
+                        title: Text(playlist.name),
+                        subtitle: playlist.description == null
+                            ? null
+                            : Text(playlist.description!),
+                        onTap: () async {
+                          try {
+                            await ref
+                                .read(playlistsNotifierProvider.notifier)
+                                .addTrackToPlaylist(
+                                  playlistId: playlist.id,
+                                  trackId: track.id,
+                                );
+                            if (!mounted || !sheetContext.mounted) {
+                              return;
+                            }
+                            Navigator.of(sheetContext).pop();
+                            ScaffoldMessenger.of(this.context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Added "${track.title}" to ${playlist.name}.',
+                                ),
+                              ),
+                            );
+                          } catch (_) {
+                            if (!mounted) {
+                              return;
+                            }
+                            ScaffoldMessenger.of(this.context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Failed to add track to playlist.',
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                      );
+                    },
+                  );
+                },
+              );
+            },
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -131,6 +240,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     return ListTile(
                       title: Text(track.title),
                       subtitle: Text(track.artist),
+                      trailing: const Icon(Icons.playlist_add),
+                      onTap: () => _showAddToPlaylistSheet(track),
                     );
                   },
                 ),

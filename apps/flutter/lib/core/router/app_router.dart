@@ -6,6 +6,8 @@ import '../auth/auth_notifier.dart';
 import '../../features/auth/presentation/auth_callback_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
+import '../../features/home/presentation/main_tabs_screen.dart';
+import '../../features/playlists/ui/playlists_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -77,12 +79,34 @@ final routerProvider = Provider<GoRouter>((ref) {
           return AuthCallbackScreen(uri: state.uri);
         },
       ),
-      GoRoute(
-        path: '/',
-        name: 'home',
-        builder: (BuildContext context, GoRouterState state) {
-          return const HomeScreen();
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return MainTabsScreen(navigationShell: navigationShell);
         },
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/',
+                name: 'home',
+                builder: (BuildContext context, GoRouterState state) {
+                  return const HomeScreen();
+                },
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/playlists',
+                name: 'playlists',
+                builder: (BuildContext context, GoRouterState state) {
+                  return const PlaylistsScreen();
+                },
+              ),
+            ],
+          ),
+        ],
       ),
     ],
   );
