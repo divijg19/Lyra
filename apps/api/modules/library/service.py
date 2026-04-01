@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.models.spotify import SpotifyAuth
 from core.models.track import Track
 
-from integrations.spotify.client import fetch_saved_tracks
+from integrations.spotify.client import fetch_audio_features, fetch_saved_tracks
 
 
 async def sync_user_library(user_id: UUID, db_session_maker: Any) -> None:
@@ -74,6 +74,49 @@ async def sync_user_library(user_id: UUID, db_session_maker: Any) -> None:
             )
 
             await session.execute(stmt)
+
+        await session.commit()
+
+
+async def enrich_user_tracks(user_id: UUID, db_session_maker: Any) -> None:
+    """Populate audio features for up to 100 user tracks missing enrichment."""
+    async with db_session_maker() as session:  # type: AsyncSession
+        auth = await session.scalar(
+            select(SpotifyAuth).where(SpotifyAuth.user_id == user_id)
+        )
+        if auth is None:
+            return
+
+        tracks_result = await session.scalars(
+            select(Track)
+            .where(
+                Track.user_id == user_id,
+                Track.bpm.is_(None),
+            )
+            .limit(100)
+        )
+        tracks = list(tracks_result.all())
+        if not tracks:
+            return
+
+        track_by_spotify_id = {track.spotify_id: track for track in tracks}
+        spotify_ids = list(track_by_spotify_id.keys())
+        features = await fetch_audio_features(auth.access_token, spotify_ids)
+
+        for feature in features:
+            spotify_id = feature.get("id")
+            if not spotify_id:
+                continue
+
+            track = track_by_spotify_id.get(spotify_id)
+            if track is None:
+                continue
+
+            # Spotify sends tempo; we store it as BPM.
+            track.bpm = feature.get("tempo")
+            track.energy = feature.get("energy")
+            track.valence = feature.get("valence")
+            track.danceability = feature.get("danceability")
 
         await session.commit()
 

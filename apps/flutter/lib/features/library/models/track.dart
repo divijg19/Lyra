@@ -12,6 +12,10 @@ abstract class Track with _$Track {
     required String artist,
     String? album,
     @JsonKey(name: 'added_at') required DateTime addedAt,
+    double? bpm,
+    double? energy,
+    double? valence,
+    double? danceability,
   }) = _Track;
 
   factory Track.fromJson(Map<String, dynamic> json) => _$TrackFromJson(json);

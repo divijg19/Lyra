@@ -13,6 +13,10 @@ _Track _$TrackFromJson(Map<String, dynamic> json) => _Track(
   artist: json['artist'] as String,
   album: json['album'] as String?,
   addedAt: DateTime.parse(json['added_at'] as String),
+  bpm: (json['bpm'] as num?)?.toDouble(),
+  energy: (json['energy'] as num?)?.toDouble(),
+  valence: (json['valence'] as num?)?.toDouble(),
+  danceability: (json['danceability'] as num?)?.toDouble(),
 );
 
 Map<String, dynamic> _$TrackToJson(_Track instance) => <String, dynamic>{
@@ -22,4 +26,8 @@ Map<String, dynamic> _$TrackToJson(_Track instance) => <String, dynamic>{
   'artist': instance.artist,
   'album': instance.album,
   'added_at': instance.addedAt.toIso8601String(),
+  'bpm': instance.bpm,
+  'energy': instance.energy,
+  'valence': instance.valence,
+  'danceability': instance.danceability,
 };
