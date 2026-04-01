@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Track {
 
- String get id;@JsonKey(name: 'spotify_id') String get spotifyId; String get title; String get artist; String? get album;@JsonKey(name: 'added_at') DateTime get addedAt;
+ String get id;@JsonKey(name: 'spotify_id') String get spotifyId; String get title; String get artist; String? get album;@JsonKey(name: 'added_at') DateTime get addedAt; double? get bpm; double? get energy; double? get valence; double? get danceability;
 /// Create a copy of Track
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $TrackCopyWith<Track> get copyWith => _$TrackCopyWithImpl<Track>(this as Track, 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Track&&(identical(other.id, id) || other.id == id)&&(identical(other.spotifyId, spotifyId) || other.spotifyId == spotifyId)&&(identical(other.title, title) || other.title == title)&&(identical(other.artist, artist) || other.artist == artist)&&(identical(other.album, album) || other.album == album)&&(identical(other.addedAt, addedAt) || other.addedAt == addedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Track&&(identical(other.id, id) || other.id == id)&&(identical(other.spotifyId, spotifyId) || other.spotifyId == spotifyId)&&(identical(other.title, title) || other.title == title)&&(identical(other.artist, artist) || other.artist == artist)&&(identical(other.album, album) || other.album == album)&&(identical(other.addedAt, addedAt) || other.addedAt == addedAt)&&(identical(other.bpm, bpm) || other.bpm == bpm)&&(identical(other.energy, energy) || other.energy == energy)&&(identical(other.valence, valence) || other.valence == valence)&&(identical(other.danceability, danceability) || other.danceability == danceability));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,spotifyId,title,artist,album,addedAt);
+int get hashCode => Object.hash(runtimeType,id,spotifyId,title,artist,album,addedAt,bpm,energy,valence,danceability);
 
 @override
 String toString() {
-  return 'Track(id: $id, spotifyId: $spotifyId, title: $title, artist: $artist, album: $album, addedAt: $addedAt)';
+  return 'Track(id: $id, spotifyId: $spotifyId, title: $title, artist: $artist, album: $album, addedAt: $addedAt, bpm: $bpm, energy: $energy, valence: $valence, danceability: $danceability)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $TrackCopyWith<$Res>  {
   factory $TrackCopyWith(Track value, $Res Function(Track) _then) = _$TrackCopyWithImpl;
 @useResult
 $Res call({
- String id,@JsonKey(name: 'spotify_id') String spotifyId, String title, String artist, String? album,@JsonKey(name: 'added_at') DateTime addedAt
+ String id,@JsonKey(name: 'spotify_id') String spotifyId, String title, String artist, String? album,@JsonKey(name: 'added_at') DateTime addedAt, double? bpm, double? energy, double? valence, double? danceability
 });
 
 
@@ -65,7 +65,7 @@ class _$TrackCopyWithImpl<$Res>
 
 /// Create a copy of Track
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? spotifyId = null,Object? title = null,Object? artist = null,Object? album = freezed,Object? addedAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? spotifyId = null,Object? title = null,Object? artist = null,Object? album = freezed,Object? addedAt = null,Object? bpm = freezed,Object? energy = freezed,Object? valence = freezed,Object? danceability = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,spotifyId: null == spotifyId ? _self.spotifyId : spotifyId // ignore: cast_nullable_to_non_nullable
@@ -73,7 +73,11 @@ as String,title: null == title ? _self.title : title // ignore: cast_nullable_to
 as String,artist: null == artist ? _self.artist : artist // ignore: cast_nullable_to_non_nullable
 as String,album: freezed == album ? _self.album : album // ignore: cast_nullable_to_non_nullable
 as String?,addedAt: null == addedAt ? _self.addedAt : addedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,bpm: freezed == bpm ? _self.bpm : bpm // ignore: cast_nullable_to_non_nullable
+as double?,energy: freezed == energy ? _self.energy : energy // ignore: cast_nullable_to_non_nullable
+as double?,valence: freezed == valence ? _self.valence : valence // ignore: cast_nullable_to_non_nullable
+as double?,danceability: freezed == danceability ? _self.danceability : danceability // ignore: cast_nullable_to_non_nullable
+as double?,
   ));
 }
 
@@ -158,10 +162,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'spotify_id')  String spotifyId,  String title,  String artist,  String? album, @JsonKey(name: 'added_at')  DateTime addedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'spotify_id')  String spotifyId,  String title,  String artist,  String? album, @JsonKey(name: 'added_at')  DateTime addedAt,  double? bpm,  double? energy,  double? valence,  double? danceability)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Track() when $default != null:
-return $default(_that.id,_that.spotifyId,_that.title,_that.artist,_that.album,_that.addedAt);case _:
+return $default(_that.id,_that.spotifyId,_that.title,_that.artist,_that.album,_that.addedAt,_that.bpm,_that.energy,_that.valence,_that.danceability);case _:
   return orElse();
 
 }
@@ -179,10 +183,10 @@ return $default(_that.id,_that.spotifyId,_that.title,_that.artist,_that.album,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'spotify_id')  String spotifyId,  String title,  String artist,  String? album, @JsonKey(name: 'added_at')  DateTime addedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'spotify_id')  String spotifyId,  String title,  String artist,  String? album, @JsonKey(name: 'added_at')  DateTime addedAt,  double? bpm,  double? energy,  double? valence,  double? danceability)  $default,) {final _that = this;
 switch (_that) {
 case _Track():
-return $default(_that.id,_that.spotifyId,_that.title,_that.artist,_that.album,_that.addedAt);case _:
+return $default(_that.id,_that.spotifyId,_that.title,_that.artist,_that.album,_that.addedAt,_that.bpm,_that.energy,_that.valence,_that.danceability);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -199,10 +203,10 @@ return $default(_that.id,_that.spotifyId,_that.title,_that.artist,_that.album,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @JsonKey(name: 'spotify_id')  String spotifyId,  String title,  String artist,  String? album, @JsonKey(name: 'added_at')  DateTime addedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @JsonKey(name: 'spotify_id')  String spotifyId,  String title,  String artist,  String? album, @JsonKey(name: 'added_at')  DateTime addedAt,  double? bpm,  double? energy,  double? valence,  double? danceability)?  $default,) {final _that = this;
 switch (_that) {
 case _Track() when $default != null:
-return $default(_that.id,_that.spotifyId,_that.title,_that.artist,_that.album,_that.addedAt);case _:
+return $default(_that.id,_that.spotifyId,_that.title,_that.artist,_that.album,_that.addedAt,_that.bpm,_that.energy,_that.valence,_that.danceability);case _:
   return null;
 
 }
@@ -214,7 +218,7 @@ return $default(_that.id,_that.spotifyId,_that.title,_that.artist,_that.album,_t
 @JsonSerializable()
 
 class _Track implements Track {
-  const _Track({required this.id, @JsonKey(name: 'spotify_id') required this.spotifyId, required this.title, required this.artist, this.album, @JsonKey(name: 'added_at') required this.addedAt});
+  const _Track({required this.id, @JsonKey(name: 'spotify_id') required this.spotifyId, required this.title, required this.artist, this.album, @JsonKey(name: 'added_at') required this.addedAt, this.bpm, this.energy, this.valence, this.danceability});
   factory _Track.fromJson(Map<String, dynamic> json) => _$TrackFromJson(json);
 
 @override final  String id;
@@ -223,6 +227,10 @@ class _Track implements Track {
 @override final  String artist;
 @override final  String? album;
 @override@JsonKey(name: 'added_at') final  DateTime addedAt;
+@override final  double? bpm;
+@override final  double? energy;
+@override final  double? valence;
+@override final  double? danceability;
 
 /// Create a copy of Track
 /// with the given fields replaced by the non-null parameter values.
@@ -237,16 +245,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Track&&(identical(other.id, id) || other.id == id)&&(identical(other.spotifyId, spotifyId) || other.spotifyId == spotifyId)&&(identical(other.title, title) || other.title == title)&&(identical(other.artist, artist) || other.artist == artist)&&(identical(other.album, album) || other.album == album)&&(identical(other.addedAt, addedAt) || other.addedAt == addedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Track&&(identical(other.id, id) || other.id == id)&&(identical(other.spotifyId, spotifyId) || other.spotifyId == spotifyId)&&(identical(other.title, title) || other.title == title)&&(identical(other.artist, artist) || other.artist == artist)&&(identical(other.album, album) || other.album == album)&&(identical(other.addedAt, addedAt) || other.addedAt == addedAt)&&(identical(other.bpm, bpm) || other.bpm == bpm)&&(identical(other.energy, energy) || other.energy == energy)&&(identical(other.valence, valence) || other.valence == valence)&&(identical(other.danceability, danceability) || other.danceability == danceability));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,spotifyId,title,artist,album,addedAt);
+int get hashCode => Object.hash(runtimeType,id,spotifyId,title,artist,album,addedAt,bpm,energy,valence,danceability);
 
 @override
 String toString() {
-  return 'Track(id: $id, spotifyId: $spotifyId, title: $title, artist: $artist, album: $album, addedAt: $addedAt)';
+  return 'Track(id: $id, spotifyId: $spotifyId, title: $title, artist: $artist, album: $album, addedAt: $addedAt, bpm: $bpm, energy: $energy, valence: $valence, danceability: $danceability)';
 }
 
 
@@ -257,7 +265,7 @@ abstract mixin class _$TrackCopyWith<$Res> implements $TrackCopyWith<$Res> {
   factory _$TrackCopyWith(_Track value, $Res Function(_Track) _then) = __$TrackCopyWithImpl;
 @override @useResult
 $Res call({
- String id,@JsonKey(name: 'spotify_id') String spotifyId, String title, String artist, String? album,@JsonKey(name: 'added_at') DateTime addedAt
+ String id,@JsonKey(name: 'spotify_id') String spotifyId, String title, String artist, String? album,@JsonKey(name: 'added_at') DateTime addedAt, double? bpm, double? energy, double? valence, double? danceability
 });
 
 
@@ -274,7 +282,7 @@ class __$TrackCopyWithImpl<$Res>
 
 /// Create a copy of Track
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? spotifyId = null,Object? title = null,Object? artist = null,Object? album = freezed,Object? addedAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? spotifyId = null,Object? title = null,Object? artist = null,Object? album = freezed,Object? addedAt = null,Object? bpm = freezed,Object? energy = freezed,Object? valence = freezed,Object? danceability = freezed,}) {
   return _then(_Track(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,spotifyId: null == spotifyId ? _self.spotifyId : spotifyId // ignore: cast_nullable_to_non_nullable
@@ -282,7 +290,11 @@ as String,title: null == title ? _self.title : title // ignore: cast_nullable_to
 as String,artist: null == artist ? _self.artist : artist // ignore: cast_nullable_to_non_nullable
 as String,album: freezed == album ? _self.album : album // ignore: cast_nullable_to_non_nullable
 as String?,addedAt: null == addedAt ? _self.addedAt : addedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,bpm: freezed == bpm ? _self.bpm : bpm // ignore: cast_nullable_to_non_nullable
+as double?,energy: freezed == energy ? _self.energy : energy // ignore: cast_nullable_to_non_nullable
+as double?,valence: freezed == valence ? _self.valence : valence // ignore: cast_nullable_to_non_nullable
+as double?,danceability: freezed == danceability ? _self.danceability : danceability // ignore: cast_nullable_to_non_nullable
+as double?,
   ));
 }
 

@@ -25,6 +25,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.dispose();
   }
 
+  Color _valenceColor(double? valence) {
+    if (valence == null) {
+      return Colors.grey;
+    }
+    if (valence > 0.6) {
+      return Colors.green;
+    }
+    if (valence < 0.4) {
+      return Colors.blue;
+    }
+    return Colors.grey;
+  }
+
+  Widget? _buildTrackTrailing(Track track) {
+    if (track.bpm == null) {
+      return const Icon(Icons.playlist_add);
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            '${track.bpm!.round()} BPM',
+            style: Theme.of(context).textTheme.labelSmall,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: _valenceColor(track.valence),
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 10),
+        const Icon(Icons.playlist_add),
+      ],
+    );
+  }
+
   void _onSearchChanged(String value) {
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 500), () {
@@ -240,7 +287,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     return ListTile(
                       title: Text(track.title),
                       subtitle: Text(track.artist),
-                      trailing: const Icon(Icons.playlist_add),
+                      trailing: _buildTrackTrailing(track),
                       onTap: () => _showAddToPlaylistSheet(track),
                     );
                   },

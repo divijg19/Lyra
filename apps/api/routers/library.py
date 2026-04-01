@@ -8,7 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.db.session import AsyncSessionLocal, get_db_session
 from core.models.user import User
 from core.security.auth import get_current_user
-from modules.library.service import get_user_tracks, sync_user_library
+from modules.library.service import (
+    enrich_user_tracks,
+    get_user_tracks,
+    sync_user_library,
+)
 
 router = APIRouter(prefix="/library", tags=["library"])
 
@@ -22,6 +26,10 @@ class TrackResponse(BaseModel):
     artist: str
     album: str | None
     added_at: datetime
+    bpm: float | None
+    energy: float | None
+    valence: float | None
+    danceability: float | None
 
 
 @router.post("/sync")
@@ -30,6 +38,7 @@ async def start_library_sync(
 ):
     # schedule a background task to perform the sync using a new session maker
     background_tasks.add_task(sync_user_library, current_user.id, AsyncSessionLocal)
+    background_tasks.add_task(enrich_user_tracks, current_user.id, AsyncSessionLocal)
     return {"status": "sync_started", "message": "Library is syncing in the background"}
 
 
