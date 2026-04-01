@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/dio_provider.dart';
+import '../library/models/track.dart';
 import 'models/playlist.dart';
 
 final playlistsNotifierProvider =
@@ -61,4 +62,40 @@ class PlaylistsNotifier extends AsyncNotifier<List<Playlist>> {
       rethrow;
     }
   }
+
+  Future<void> deletePlaylist(String playlistId) async {
+    final dio = ref.read(dioProvider);
+    await dio.delete('/playlists/$playlistId');
+
+    final current = state.asData?.value ?? const <Playlist>[];
+    state = AsyncData(
+      current.where((playlist) => playlist.id != playlistId).toList(),
+    );
+  }
+
+  Future<void> removeTrackFromPlaylist(
+    String playlistId,
+    String trackId,
+  ) async {
+    final dio = ref.read(dioProvider);
+    await dio.delete('/playlists/$playlistId/tracks/$trackId');
+  }
+
+  Future<List<Track>> fetchPlaylistTracks(String playlistId) async {
+    final dio = ref.read(dioProvider);
+    final response = await dio.get('/playlists/$playlistId/tracks');
+    final rawList = response.data as List<dynamic>;
+    return rawList
+        .map((item) => Track.fromJson(item as Map<String, dynamic>))
+        .toList(growable: false);
+  }
 }
+
+final playlistTracksProvider = FutureProvider.family<List<Track>, String>((
+  ref,
+  playlistId,
+) async {
+  return ref
+      .read(playlistsNotifierProvider.notifier)
+      .fetchPlaylistTracks(playlistId);
+});

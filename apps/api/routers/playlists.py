@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,8 +11,10 @@ from core.security.auth import get_current_user
 from modules.playlist.service import (
     add_track_to_playlist,
     create_playlist,
+    delete_playlist,
     get_playlist_tracks,
     get_user_playlists,
+    remove_track_from_playlist,
 )
 
 router = APIRouter(prefix="/playlists", tags=["playlists"])
@@ -116,3 +118,50 @@ async def list_playlist_tracks(
         ) from exc
 
     return [PlaylistTrackResponse.model_validate(track) for track in tracks]
+
+
+@router.delete("/{playlist_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user_playlist(
+    playlist_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+) -> Response:
+    try:
+        await delete_playlist(
+            playlist_id=playlist_id,
+            user_id=current_user.id,
+            db=db,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.delete(
+    "/{playlist_id}/tracks/{track_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_track_from_playlist(
+    playlist_id: UUID,
+    track_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+) -> Response:
+    try:
+        await remove_track_from_playlist(
+            playlist_id=playlist_id,
+            track_id=track_id,
+            user_id=current_user.id,
+            db=db,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
