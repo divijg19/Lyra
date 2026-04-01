@@ -1,10 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../playlists_notifier.dart';
 
 class PlaylistsScreen extends ConsumerWidget {
   const PlaylistsScreen({super.key});
+
+  Future<bool?> _confirmDeletePlaylist(
+    BuildContext context,
+    String playlistName,
+  ) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete Playlist?'),
+          content: Text('Delete "$playlistName"? This cannot be undone.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Future<void> _showCreatePlaylistDialog(
     BuildContext context,
@@ -140,11 +166,52 @@ class PlaylistsScreen extends ConsumerWidget {
               itemCount: playlists.length,
               itemBuilder: (context, index) {
                 final playlist = playlists[index];
-                return ListTile(
-                  title: Text(playlist.name),
-                  subtitle: playlist.description == null
-                      ? null
-                      : Text(playlist.description!),
+                return Dismissible(
+                  key: ValueKey('playlist-${playlist.id}'),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    color: Theme.of(context).colorScheme.error,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ),
+                  confirmDismiss: (_) =>
+                      _confirmDeletePlaylist(context, playlist.name),
+                  onDismissed: (_) async {
+                    try {
+                      await ref
+                          .read(playlistsNotifierProvider.notifier)
+                          .deletePlaylist(playlist.id);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Deleted ${playlist.name}.')),
+                        );
+                      }
+                    } catch (_) {
+                      await ref
+                          .read(playlistsNotifierProvider.notifier)
+                          .fetchPlaylists();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Failed to delete playlist.'),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  child: ListTile(
+                    title: Text(playlist.name),
+                    subtitle: playlist.description == null
+                        ? null
+                        : Text(playlist.description!),
+                    onTap: () {
+                      context.push(
+                        '/playlists/${playlist.id}',
+                        extra: playlist,
+                      );
+                    },
+                  ),
                 );
               },
             );

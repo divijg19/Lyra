@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -99,3 +99,51 @@ async def get_playlist_tracks(
         .order_by(PlaylistTrack.added_at.desc())
     )
     return list(result.all())
+
+
+async def delete_playlist(
+    playlist_id: UUID,
+    user_id: UUID,
+    db: AsyncSession,
+) -> None:
+    playlist = await db.scalar(
+        select(Playlist).where(
+            Playlist.id == playlist_id,
+            Playlist.user_id == user_id,
+        )
+    )
+    if playlist is None:
+        raise ValueError("Playlist not found")
+
+    await db.delete(playlist)
+    await db.commit()
+
+
+async def remove_track_from_playlist(
+    playlist_id: UUID,
+    track_id: UUID,
+    user_id: UUID,
+    db: AsyncSession,
+) -> None:
+    playlist = await db.scalar(
+        select(Playlist).where(
+            Playlist.id == playlist_id,
+            Playlist.user_id == user_id,
+        )
+    )
+    if playlist is None:
+        raise ValueError("Playlist not found")
+
+    result = await db.execute(
+        delete(PlaylistTrack)
+        .where(
+            PlaylistTrack.playlist_id == playlist_id,
+            PlaylistTrack.track_id == track_id,
+        )
+        .returning(PlaylistTrack.playlist_id)
+    )
+    deleted = result.scalar_one_or_none()
+    if deleted is None:
+        raise ValueError("Track is not in playlist")
+
+    await db.commit()

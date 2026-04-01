@@ -24,3 +24,16 @@ final libraryTracksUriProvider = Provider.family<Uri, ({int skip, int limit})>((
     },
   );
 });
+
+final playlistUriProvider = Provider.family<Uri, String>((ref, playlistId) {
+  final baseUrl = ref.watch(lyraApiBaseUrlProvider);
+  return Uri.parse('$baseUrl/playlists/$playlistId');
+});
+
+final playlistTrackUriProvider =
+    Provider.family<Uri, ({String playlistId, String trackId})>((ref, params) {
+      final baseUrl = ref.watch(lyraApiBaseUrlProvider);
+      return Uri.parse(
+        '$baseUrl/playlists/${params.playlistId}/tracks/${params.trackId}',
+      );
+    });

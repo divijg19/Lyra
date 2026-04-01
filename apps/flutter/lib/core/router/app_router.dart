@@ -7,6 +7,8 @@ import '../../features/auth/presentation/auth_callback_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/home/presentation/main_tabs_screen.dart';
+import '../../features/playlists/models/playlist.dart';
+import '../../features/playlists/ui/playlist_details_screen.dart';
 import '../../features/playlists/ui/playlists_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
 
@@ -103,6 +105,21 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (BuildContext context, GoRouterState state) {
                   return const PlaylistsScreen();
                 },
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    name: 'playlist-details',
+                    builder: (BuildContext context, GoRouterState state) {
+                      final maybePlaylist = state.extra is Playlist
+                          ? state.extra as Playlist
+                          : null;
+                      return PlaylistDetailsScreen(
+                        playlistId: state.pathParameters['id']!,
+                        playlistName: maybePlaylist?.name,
+                      );
+                    },
+                  ),
+                ],
               ),
             ],
           ),
