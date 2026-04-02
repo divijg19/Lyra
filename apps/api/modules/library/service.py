@@ -127,6 +127,12 @@ async def get_user_tracks(
     skip: int = 0,
     limit: int = 50,
     search_query: str | None = None,
+    min_bpm: float | None = None,
+    max_bpm: float | None = None,
+    min_energy: float | None = None,
+    max_energy: float | None = None,
+    min_valence: float | None = None,
+    max_valence: float | None = None,
 ) -> list[Track]:
     stmt = select(Track).where(
         Track.user_id == user_id,
@@ -141,6 +147,21 @@ async def get_user_tracks(
                 Track.artist.ilike(f"%{search_query}%"),
             )
         )
+
+    if min_bpm is not None:
+        stmt = stmt.where(Track.bpm >= min_bpm)
+    if max_bpm is not None:
+        stmt = stmt.where(Track.bpm <= max_bpm)
+
+    if min_energy is not None:
+        stmt = stmt.where(Track.energy >= min_energy)
+    if max_energy is not None:
+        stmt = stmt.where(Track.energy <= max_energy)
+
+    if min_valence is not None:
+        stmt = stmt.where(Track.valence >= min_valence)
+    if max_valence is not None:
+        stmt = stmt.where(Track.valence <= max_valence)
 
     stmt = stmt.order_by(Track.added_at.desc()).offset(skip).limit(limit)
     result = await db.scalars(stmt)

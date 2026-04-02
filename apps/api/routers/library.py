@@ -49,6 +49,12 @@ async def list_library_tracks(
     q: str | None = Query(default=None),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=100),
+    min_bpm: float | None = Query(default=None),
+    max_bpm: float | None = Query(default=None),
+    min_energy: float | None = Query(default=None, ge=0.0, le=1.0),
+    max_energy: float | None = Query(default=None, ge=0.0, le=1.0),
+    min_valence: float | None = Query(default=None, ge=0.0, le=1.0),
+    max_valence: float | None = Query(default=None, ge=0.0, le=1.0),
 ) -> list[TrackResponse]:
     tracks = await get_user_tracks(
         user_id=current_user.id,
@@ -56,5 +62,11 @@ async def list_library_tracks(
         skip=skip,
         limit=limit,
         search_query=q,
+        min_bpm=min_bpm,
+        max_bpm=max_bpm,
+        min_energy=min_energy,
+        max_energy=max_energy,
+        min_valence=min_valence,
+        max_valence=max_valence,
     )
     return [TrackResponse.model_validate(track) for track in tracks]

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/dio_provider.dart';
 import '../../core/network/lyra_endpoints.dart';
+import 'models/track_filters.dart';
 import 'models/track.dart';
 
 final libraryNotifierProvider = NotifierProvider<LibraryNotifier, bool>(
@@ -31,6 +32,11 @@ final tracksNotifierProvider =
 
 class TracksNotifier extends AsyncNotifier<List<Track>> {
   String? _currentSearchQuery;
+  TrackFilters _currentFilters = TrackFilters.empty;
+
+  TrackFilters get currentFilters => _currentFilters;
+
+  bool get hasActiveFilters => _currentFilters.hasAnyFilter;
 
   @override
   Future<List<Track>> build() async {
@@ -51,6 +57,16 @@ class TracksNotifier extends AsyncNotifier<List<Track>> {
       'limit': limit,
       if (effectiveQuery != null && effectiveQuery.isNotEmpty)
         'q': effectiveQuery,
+      if (_currentFilters.minBpm != null) 'min_bpm': _currentFilters.minBpm,
+      if (_currentFilters.maxBpm != null) 'max_bpm': _currentFilters.maxBpm,
+      if (_currentFilters.minEnergy != null)
+        'min_energy': _currentFilters.minEnergy,
+      if (_currentFilters.maxEnergy != null)
+        'max_energy': _currentFilters.maxEnergy,
+      if (_currentFilters.minValence != null)
+        'min_valence': _currentFilters.minValence,
+      if (_currentFilters.maxValence != null)
+        'max_valence': _currentFilters.maxValence,
     };
 
     final response = await dio.get(
@@ -71,6 +87,12 @@ class TracksNotifier extends AsyncNotifier<List<Track>> {
     _currentSearchQuery = normalized.isEmpty ? null : normalized;
 
     // Clear current list before fetching fresh search results from page start.
+    state = const AsyncData(<Track>[]);
+    await fetchTracks(skip: 0, limit: 100, query: _currentSearchQuery);
+  }
+
+  Future<void> applyFilters(TrackFilters filters) async {
+    _currentFilters = filters;
     state = const AsyncData(<Track>[]);
     await fetchTracks(skip: 0, limit: 100, query: _currentSearchQuery);
   }
