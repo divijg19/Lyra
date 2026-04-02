@@ -59,6 +59,7 @@ ios/Runner.xcworkspace/
 *.iml
 *.ipr
 *.iws
+.codex
 
 # -----------------
 # Misc

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../library/library_notifier.dart';
+import '../../library/ui/filter_bottom_sheet.dart';
 import '../../library/models/track.dart';
 import '../../playlists/playlists_notifier.dart';
 
@@ -77,6 +78,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _searchDebounce = Timer(const Duration(milliseconds: 500), () {
       ref.read(tracksNotifierProvider.notifier).searchTracks(value);
     });
+  }
+
+  Future<void> _showFilterBottomSheet() async {
+    final notifier = ref.read(tracksNotifierProvider.notifier);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) =>
+          FilterBottomSheet(initialFilters: notifier.currentFilters),
+    );
   }
 
   Future<void> _showAddToPlaylistSheet(Track track) async {
@@ -190,11 +201,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final syncing = ref.watch(libraryNotifierProvider);
     final tracksState = ref.watch(tracksNotifierProvider);
+    final hasActiveFilters = ref
+        .read(tracksNotifierProvider.notifier)
+        .hasActiveFilters;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Lyra Library'),
         actions: [
+          IconButton(
+            tooltip: 'Filter tracks',
+            onPressed: _showFilterBottomSheet,
+            icon: Icon(
+              Icons.tune,
+              color: hasActiveFilters
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: ElevatedButton(
