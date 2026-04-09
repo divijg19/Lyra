@@ -201,6 +201,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final syncing = ref.watch(libraryNotifierProvider);
     final tracksState = ref.watch(tracksNotifierProvider);
+    final isSemanticSearch = ref.watch(semanticSearchModeProvider);
     final hasActiveFilters = ref
         .read(tracksNotifierProvider.notifier)
         .hasActiveFilters;
@@ -261,15 +262,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: TextField(
-              controller: _searchController,
-              onChanged: _onSearchChanged,
-              textInputAction: TextInputAction.search,
-              decoration: const InputDecoration(
-                hintText: 'Search by title or artist',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-              ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: _onSearchChanged,
+                    textInputAction: TextInputAction.search,
+                    decoration: InputDecoration(
+                      hintText: isSemanticSearch
+                          ? 'Semantic search'
+                          : 'Search by title or artist',
+                      prefixIcon: const Icon(Icons.search),
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  tooltip: isSemanticSearch
+                      ? 'Disable semantic search'
+                      : 'Enable semantic search',
+                  onPressed: () {
+                    final next = !isSemanticSearch;
+                    ref
+                        .read(tracksNotifierProvider.notifier)
+                        .setSemanticSearch(next);
+                    _onSearchChanged(_searchController.text);
+                  },
+                  icon: Icon(
+                    Icons.auto_awesome,
+                    color: isSemanticSearch
+                        ? Theme.of(context).colorScheme.primary
+                        : null,
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(

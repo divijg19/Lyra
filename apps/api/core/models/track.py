@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import DateTime, Float, ForeignKey, String, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -42,6 +43,7 @@ class Track(Base):
     energy: Mapped[float | None] = mapped_column(Float, nullable=True)
     valence: Mapped[float | None] = mapped_column(Float, nullable=True)
     danceability: Mapped[float | None] = mapped_column(Float, nullable=True)
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(384), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
