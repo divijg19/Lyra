@@ -3,11 +3,17 @@ from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from pydantic import BaseModel, ConfigDict
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.db.session import AsyncSessionLocal, get_db_session
+from core.models.track import Track
 from core.models.user import User
 from core.security.auth import get_current_user
+from modules.intelligence.service import (
+    generate_query_embedding,
+    vectorize_user_tracks,
+)
 from modules.library.service import (
     enrich_user_tracks,
     get_user_tracks,
@@ -39,6 +45,7 @@ async def start_library_sync(
     # schedule a background task to perform the sync using a new session maker
     background_tasks.add_task(sync_user_library, current_user.id, AsyncSessionLocal)
     background_tasks.add_task(enrich_user_tracks, current_user.id, AsyncSessionLocal)
+    background_tasks.add_task(vectorize_user_tracks, current_user.id, AsyncSessionLocal)
     return {"status": "sync_started", "message": "Library is syncing in the background"}
 
 
@@ -69,4 +76,28 @@ async def list_library_tracks(
         min_valence=min_valence,
         max_valence=max_valence,
     )
+    return [TrackResponse.model_validate(track) for track in tracks]
+
+
+@router.get("/search/semantic", response_model=list[TrackResponse])
+async def semantic_search_tracks(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+    q: str = Query(..., min_length=1),
+) -> list[TrackResponse]:
+    query = q.strip()
+    if not query:
+        return []
+
+    query_embedding = generate_query_embedding(query)
+    result = await db.scalars(
+        select(Track)
+        .where(
+            Track.user_id == current_user.id,
+            Track.embedding.is_not(None),
+        )
+        .order_by(Track.embedding.cosine_distance(query_embedding))
+        .limit(20)
+    )
+    tracks = list(result.all())
     return [TrackResponse.model_validate(track) for track in tracks]

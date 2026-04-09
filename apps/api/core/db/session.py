@@ -1,5 +1,7 @@
 from collections.abc import AsyncIterator
 
+from pgvector.psycopg import register_vector_async
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -14,6 +16,12 @@ engine: AsyncEngine = create_async_engine(
     settings.sqlalchemy_database_url,
     echo=settings.is_development,
 )
+
+
+@event.listens_for(engine.sync_engine, "connect")
+def _register_pgvector(dbapi_connection, _) -> None:
+    dbapi_connection.run_async(register_vector_async)
+
 
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,

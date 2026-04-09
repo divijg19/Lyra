@@ -9,6 +9,18 @@ final libraryNotifierProvider = NotifierProvider<LibraryNotifier, bool>(
   LibraryNotifier.new,
 );
 
+final semanticSearchModeProvider =
+    NotifierProvider<SemanticSearchNotifier, bool>(SemanticSearchNotifier.new);
+
+class SemanticSearchNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void setEnabled(bool enabled) {
+    state = enabled;
+  }
+}
+
 class LibraryNotifier extends Notifier<bool> {
   @override
   bool build() => false;
@@ -52,6 +64,24 @@ class TracksNotifier extends AsyncNotifier<List<Track>> {
 
     final effectiveQuery = query ?? _currentSearchQuery;
     final dio = ref.read(dioProvider);
+    final isSemanticSearch = ref.read(semanticSearchModeProvider);
+
+    if (isSemanticSearch &&
+        effectiveQuery != null &&
+        effectiveQuery.isNotEmpty) {
+      final response = await dio.get(
+        '/library/search/semantic',
+        queryParameters: {'q': effectiveQuery},
+      );
+      final rawList = response.data as List<dynamic>;
+      final tracks = rawList
+          .map((item) => Track.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false);
+
+      state = AsyncData(tracks);
+      return tracks;
+    }
+
     final queryParameters = <String, dynamic>{
       'skip': skip,
       'limit': limit,
@@ -93,6 +123,12 @@ class TracksNotifier extends AsyncNotifier<List<Track>> {
 
   Future<void> applyFilters(TrackFilters filters) async {
     _currentFilters = filters;
+    state = const AsyncData(<Track>[]);
+    await fetchTracks(skip: 0, limit: 100, query: _currentSearchQuery);
+  }
+
+  Future<void> setSemanticSearch(bool enabled) async {
+    ref.read(semanticSearchModeProvider.notifier).setEnabled(enabled);
     state = const AsyncData(<Track>[]);
     await fetchTracks(skip: 0, limit: 100, query: _currentSearchQuery);
   }
