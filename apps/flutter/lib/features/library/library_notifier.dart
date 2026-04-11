@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/dio_provider.dart';
@@ -45,6 +46,8 @@ final tracksNotifierProvider =
 class TracksNotifier extends AsyncNotifier<List<Track>> {
   String? _currentSearchQuery;
   TrackFilters _currentFilters = TrackFilters.empty;
+  CancelToken? _activeCancelToken;
+  int _requestVersion = 0;
 
   TrackFilters get currentFilters => _currentFilters;
 
@@ -52,6 +55,9 @@ class TracksNotifier extends AsyncNotifier<List<Track>> {
 
   @override
   Future<List<Track>> build() async {
+    ref.onDispose(() {
+      _activeCancelToken?.cancel();
+    });
     return fetchTracks(skip: 0, limit: 100);
   }
 
@@ -60,56 +66,82 @@ class TracksNotifier extends AsyncNotifier<List<Track>> {
     int limit = 100,
     String? query,
   }) async {
+    final requestVersion = ++_requestVersion;
+    _activeCancelToken?.cancel();
+    final cancelToken = CancelToken();
+    _activeCancelToken = cancelToken;
     state = const AsyncLoading();
 
     final effectiveQuery = query ?? _currentSearchQuery;
     final dio = ref.read(dioProvider);
     final isSemanticSearch = ref.read(semanticSearchModeProvider);
 
-    if (isSemanticSearch &&
-        effectiveQuery != null &&
-        effectiveQuery.isNotEmpty) {
+    try {
+      if (isSemanticSearch &&
+          effectiveQuery != null &&
+          effectiveQuery.isNotEmpty) {
+        final response = await dio.get(
+          '/library/search/semantic',
+          queryParameters: {'q': effectiveQuery},
+          cancelToken: cancelToken,
+        );
+        final tracks = _parseTracks(response.data);
+        if (_isStaleRequest(requestVersion, cancelToken)) {
+          return state.asData?.value ?? const <Track>[];
+        }
+
+        state = AsyncData(tracks);
+        return tracks;
+      }
+
+      final queryParameters = <String, dynamic>{
+        'skip': skip,
+        'limit': limit,
+        if (effectiveQuery != null && effectiveQuery.isNotEmpty)
+          'q': effectiveQuery,
+        if (_currentFilters.minBpm != null) 'min_bpm': _currentFilters.minBpm,
+        if (_currentFilters.maxBpm != null) 'max_bpm': _currentFilters.maxBpm,
+        if (_currentFilters.minEnergy != null)
+          'min_energy': _currentFilters.minEnergy,
+        if (_currentFilters.maxEnergy != null)
+          'max_energy': _currentFilters.maxEnergy,
+        if (_currentFilters.minValence != null)
+          'min_valence': _currentFilters.minValence,
+        if (_currentFilters.maxValence != null)
+          'max_valence': _currentFilters.maxValence,
+      };
+
       final response = await dio.get(
-        '/library/search/semantic',
-        queryParameters: {'q': effectiveQuery},
+        '/library/tracks',
+        queryParameters: queryParameters,
+        cancelToken: cancelToken,
       );
-      final rawList = response.data as List<dynamic>;
-      final tracks = rawList
-          .map((item) => Track.fromJson(item as Map<String, dynamic>))
-          .toList(growable: false);
+      final tracks = _parseTracks(response.data);
+      if (_isStaleRequest(requestVersion, cancelToken)) {
+        return state.asData?.value ?? const <Track>[];
+      }
 
       state = AsyncData(tracks);
       return tracks;
+    } on DioException catch (error, stackTrace) {
+      if (CancelToken.isCancel(error)) {
+        return state.asData?.value ?? const <Track>[];
+      }
+
+      if (!_isStaleRequest(requestVersion, cancelToken)) {
+        state = AsyncError(error, stackTrace);
+      }
+      rethrow;
+    } catch (error, stackTrace) {
+      if (!_isStaleRequest(requestVersion, cancelToken)) {
+        state = AsyncError(error, stackTrace);
+      }
+      rethrow;
+    } finally {
+      if (identical(_activeCancelToken, cancelToken)) {
+        _activeCancelToken = null;
+      }
     }
-
-    final queryParameters = <String, dynamic>{
-      'skip': skip,
-      'limit': limit,
-      if (effectiveQuery != null && effectiveQuery.isNotEmpty)
-        'q': effectiveQuery,
-      if (_currentFilters.minBpm != null) 'min_bpm': _currentFilters.minBpm,
-      if (_currentFilters.maxBpm != null) 'max_bpm': _currentFilters.maxBpm,
-      if (_currentFilters.minEnergy != null)
-        'min_energy': _currentFilters.minEnergy,
-      if (_currentFilters.maxEnergy != null)
-        'max_energy': _currentFilters.maxEnergy,
-      if (_currentFilters.minValence != null)
-        'min_valence': _currentFilters.minValence,
-      if (_currentFilters.maxValence != null)
-        'max_valence': _currentFilters.maxValence,
-    };
-
-    final response = await dio.get(
-      '/library/tracks',
-      queryParameters: queryParameters,
-    );
-    final rawList = response.data as List<dynamic>;
-    final tracks = rawList
-        .map((item) => Track.fromJson(item as Map<String, dynamic>))
-        .toList(growable: false);
-
-    state = AsyncData(tracks);
-    return tracks;
   }
 
   Future<void> searchTracks(String query) async {
@@ -131,5 +163,17 @@ class TracksNotifier extends AsyncNotifier<List<Track>> {
     ref.read(semanticSearchModeProvider.notifier).setEnabled(enabled);
     state = const AsyncData(<Track>[]);
     await fetchTracks(skip: 0, limit: 100, query: _currentSearchQuery);
+  }
+
+  bool _isStaleRequest(int requestVersion, CancelToken cancelToken) {
+    return requestVersion != _requestVersion ||
+        !identical(_activeCancelToken, cancelToken);
+  }
+
+  List<Track> _parseTracks(Object? rawData) {
+    final rawList = rawData as List<dynamic>;
+    return rawList
+        .map((item) => Track.fromJson(item as Map<String, dynamic>))
+        .toList(growable: false);
   }
 }

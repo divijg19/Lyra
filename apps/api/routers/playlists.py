@@ -82,7 +82,7 @@ async def add_track(
     db: AsyncSession = Depends(get_db_session),
 ) -> dict[str, str]:
     try:
-        inserted = await add_track_to_playlist(
+        await add_track_to_playlist(
             playlist_id=playlist_id,
             track_id=payload.track_id,
             user_id=current_user.id,
@@ -94,9 +94,7 @@ async def add_track(
             detail=str(exc),
         ) from exc
 
-    if inserted:
-        return {"status": "track_added"}
-    return {"status": "track_already_in_playlist"}
+    return {"status": "track_added"}
 
 
 @router.get("/{playlist_id}/tracks", response_model=list[PlaylistTrackResponse])

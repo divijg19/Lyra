@@ -1,6 +1,20 @@
-from typing import AsyncGenerator, List
+from typing import Any, AsyncGenerator, List
 
 import httpx
+
+
+async def fetch_saved_tracks_page(
+    access_token: str,
+    url: str | None = None,
+) -> dict[str, Any]:
+    headers = {"Authorization": f"Bearer {access_token}"}
+    request_url = url or "https://api.spotify.com/v1/me/tracks"
+    params = None if url else {"limit": 50}
+
+    async with httpx.AsyncClient(headers=headers, timeout=30.0) as client:
+        resp = await client.get(request_url, params=params)
+        resp.raise_for_status()
+        return resp.json()
 
 
 async def fetch_saved_tracks(access_token: str) -> AsyncGenerator[List[dict], None]:
@@ -8,23 +22,16 @@ async def fetch_saved_tracks(access_token: str) -> AsyncGenerator[List[dict], No
 
     Yields lists of raw item dicts as returned by Spotify's /me/tracks endpoint.
     """
-    headers = {"Authorization": f"Bearer {access_token}"}
-    url = "https://api.spotify.com/v1/me/tracks"
-    params = {"limit": 50}
+    url: str | None = None
+    while True:
+        data = await fetch_saved_tracks_page(access_token, url)
+        items = data.get("items", [])
+        if items:
+            yield items
 
-    async with httpx.AsyncClient(headers=headers, timeout=30.0) as client:
-        while url is not None:
-            resp = await client.get(url, params=params)
-            resp.raise_for_status()
-            data = resp.json()
-            items = data.get("items", [])
-            if items:
-                yield items
-
-            # Spotify provides a full next URL or null
-            url = data.get("next")
-            # clear params after first request since `next` is full url
-            params = None
+        url = data.get("next")
+        if url is None:
+            break
 
 
 async def fetch_audio_features(access_token: str, track_ids: List[str]) -> List[dict]:

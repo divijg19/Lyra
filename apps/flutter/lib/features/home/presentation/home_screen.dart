@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/auth/auth_notifier.dart';
 import '../../library/library_notifier.dart';
 import '../../library/ui/filter_bottom_sheet.dart';
 import '../../library/models/track.dart';
@@ -172,14 +173,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 ),
                               ),
                             );
-                          } catch (_) {
+                          } catch (error) {
                             if (!mounted) {
                               return;
                             }
                             ScaffoldMessenger.of(this.context).showSnackBar(
-                              const SnackBar(
+                              SnackBar(
                                 content: Text(
-                                  'Failed to add track to playlist.',
+                                  error is String
+                                      ? error
+                                      : 'Failed to add track to playlist.',
                                 ),
                               ),
                             );
@@ -210,6 +213,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         title: const Text('Lyra Library'),
         actions: [
+          IconButton(
+            tooltip: 'Logout',
+            onPressed: () async {
+              await ref.read(authNotifierProvider.notifier).logout();
+            },
+            icon: const Icon(Icons.logout),
+          ),
           IconButton(
             tooltip: 'Filter tracks',
             onPressed: _showFilterBottomSheet,

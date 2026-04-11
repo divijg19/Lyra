@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from fastapi import HTTPException, status
 from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -72,7 +73,12 @@ async def add_track_to_playlist(
     result = await db.execute(stmt)
     await db.commit()
     inserted = result.scalar_one_or_none()
-    return inserted is not None
+    if inserted is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Track already in playlist",
+        )
+    return True
 
 
 async def get_playlist_tracks(

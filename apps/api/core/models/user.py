@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, func
+from sqlalchemy import DateTime, String, func
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -21,6 +21,12 @@ class User(Base):
         PGUUID(as_uuid=True),
         primary_key=True,
         default=uuid4,
+    )
+    spotify_id: Mapped[str | None] = mapped_column(
+        String(128),
+        unique=True,
+        nullable=True,
+        index=True,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

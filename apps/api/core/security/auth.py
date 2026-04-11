@@ -1,9 +1,11 @@
 from uuid import UUID
 
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.config.settings import settings
 from core.db.session import get_db
 from core.models.user import User
 
@@ -15,8 +17,14 @@ async def get_current_user(
     db: AsyncSession = Depends(get_db),
 ) -> User:
     try:
-        user_id = UUID(token)
-    except ValueError as exc:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+            options={"require": ["sub", "exp"]},
+        )
+        user_id = UUID(payload["sub"])
+    except (jwt.InvalidTokenError, ValueError, KeyError) as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid session",

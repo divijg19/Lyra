@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     SPOTIFY_CLIENT_ID: str = ""
     SPOTIFY_CLIENT_SECRET: str = ""
     SPOTIFY_REDIRECT_URI: str = "http://localhost:8000/auth/spotify/callback"
+    SECRET_KEY: str = "change-me"
+    ALGORITHM: str = "HS256"
     ENVIRONMENT: str = "development"
 
     @computed_field  # type: ignore[prop-decorator]

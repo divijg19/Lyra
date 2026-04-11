@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../network/base_url.dart';
+import '../network/network_client_options.dart';
 import '../network/secure_storage_provider.dart';
 
 const sessionTokenKey = 'lyra_session_token';
@@ -43,20 +44,15 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       }
 
       final dio = Dio(
-        BaseOptions(
-          baseUrl: ref.read(lyraApiBaseUrlProvider),
-          connectTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 10),
-          headers: const {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-        ),
+        createLyraApiBaseOptions(ref.read(lyraApiBaseUrlProvider)),
       );
 
       await dio.get(
         '/auth/session',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          extra: {'skipLogoutOnUnauthorized': true},
+        ),
       );
       final authenticated = AuthState.authenticated(token);
       state = AsyncData(authenticated);
