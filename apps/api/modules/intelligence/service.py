@@ -26,25 +26,26 @@ def generate_query_embedding(query: str) -> list[float]:
 
 async def vectorize_user_tracks(user_id: UUID, db_session_maker: Any) -> None:
     async with db_session_maker() as session:
-        result = await session.scalars(
-            select(Track)
-            .where(
-                Track.user_id == user_id,
-                Track.embedding.is_(None),
-                Track.bpm.is_not(None),
+        while True:
+            result = await session.scalars(
+                select(Track)
+                .where(
+                    Track.user_id == user_id,
+                    Track.embedding.is_(None),
+                    Track.bpm.is_not(None),
+                )
+                .limit(100)
             )
-            .limit(100)
-        )
-        tracks = list(result.all())
-        if not tracks:
-            return
+            tracks = list(result.all())
+            if not tracks:
+                break
 
-        for track in tracks:
-            track.embedding = generate_track_embedding(
-                title=track.title,
-                artist=track.artist or "Unknown Artist",
-                energy=float(track.energy) if track.energy is not None else 0.0,
-                valence=float(track.valence) if track.valence is not None else 0.0,
-            )
+            for track in tracks:
+                track.embedding = generate_track_embedding(
+                    title=track.title,
+                    artist=track.artist or "Unknown Artist",
+                    energy=float(track.energy) if track.energy is not None else 0.0,
+                    valence=float(track.valence) if track.valence is not None else 0.0,
+                )
 
-        await session.commit()
+            await session.commit()

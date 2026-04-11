@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 String resolveLyraApiBaseUrl() {
@@ -8,15 +7,12 @@ String resolveLyraApiBaseUrl() {
     return configuredBaseUrl;
   }
 
-  if (Platform.isAndroid) {
-    return 'http://10.0.2.2:8000';
+  if (kIsWeb) {
+    return 'http://127.0.0.1:8000';
   }
 
-  if (Platform.isIOS ||
-      Platform.isLinux ||
-      Platform.isMacOS ||
-      Platform.isWindows) {
-    return 'http://127.0.0.1:8000';
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    return 'http://10.0.2.2:8000';
   }
 
   return 'http://127.0.0.1:8000';
