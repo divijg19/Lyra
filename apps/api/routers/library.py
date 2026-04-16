@@ -12,12 +12,10 @@ from core.models.user import User
 from core.security.auth import get_current_user
 from modules.intelligence.service import (
     generate_query_embedding,
-    vectorize_user_tracks,
 )
 from modules.library.service import (
-    enrich_user_tracks,
     get_user_tracks,
-    sync_user_library,
+    run_full_sync_pipeline,
 )
 
 router = APIRouter(prefix="/library", tags=["library"])
@@ -38,15 +36,27 @@ class TrackResponse(BaseModel):
     danceability: float | None
 
 
+class LibrarySyncStatusResponse(BaseModel):
+    sync_status: str
+    last_synced_at: datetime | None
+
+
 @router.post("/sync")
 async def start_library_sync(
     background_tasks: BackgroundTasks, current_user: User = Depends(get_current_user)
 ):
-    # schedule a background task to perform the sync using a new session maker
-    background_tasks.add_task(sync_user_library, current_user.id, AsyncSessionLocal)
-    background_tasks.add_task(enrich_user_tracks, current_user.id, AsyncSessionLocal)
-    background_tasks.add_task(vectorize_user_tracks, current_user.id, AsyncSessionLocal)
+    background_tasks.add_task(run_full_sync_pipeline, current_user.id, AsyncSessionLocal)
     return {"status": "sync_started", "message": "Library is syncing in the background"}
+
+
+@router.get("/sync/status", response_model=LibrarySyncStatusResponse)
+async def get_library_sync_status(
+    current_user: User = Depends(get_current_user),
+):
+    return LibrarySyncStatusResponse(
+        sync_status=current_user.sync_status,
+        last_synced_at=current_user.last_synced_at,
+    )
 
 
 @router.get("/tracks", response_model=list[TrackResponse])

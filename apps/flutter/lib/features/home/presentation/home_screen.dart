@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/auth/auth_notifier.dart';
+import '../../../core/ui/empty_state_widget.dart';
 import '../../library/library_notifier.dart';
 import '../../library/ui/filter_bottom_sheet.dart';
 import '../../library/models/track.dart';
@@ -202,16 +203,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final syncing = ref.watch(libraryNotifierProvider);
+    ref.listen<String?>(
+      libraryNotifierProvider.select((state) => state.errorMessage),
+      (previous, next) {
+        if (next == null || next == previous || !mounted) {
+          return;
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(next)),
+        );
+      },
+    );
+
+    final syncState = ref.watch(libraryNotifierProvider);
     final tracksState = ref.watch(tracksNotifierProvider);
     final isSemanticSearch = ref.watch(semanticSearchModeProvider);
-    final hasActiveFilters = ref
-        .read(tracksNotifierProvider.notifier)
-        .hasActiveFilters;
+    final tracksNotifier = ref.read(tracksNotifierProvider.notifier);
+    final hasActiveFilters = tracksNotifier.hasActiveFilters;
+    final hasActiveSearchOrFilters =
+        tracksNotifier.hasActiveQuery || hasActiveFilters;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Lyra Library'),
+        bottom: syncState.isSyncing
+            ? const PreferredSize(
+                preferredSize: Size.fromHeight(4),
+                child: LinearProgressIndicator(),
+              )
+            : null,
         actions: [
           IconButton(
             tooltip: 'Logout',
@@ -233,13 +254,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: ElevatedButton(
-              onPressed: syncing
+              onPressed: syncState.isSyncing
                   ? null
                   : () async {
                       try {
                         await ref
                             .read(libraryNotifierProvider.notifier)
-                            .startSync();
+                            .syncLibrary();
                         if (!context.mounted) {
                           return;
                         }
@@ -247,17 +268,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           const SnackBar(content: Text('Sync started...')),
                         );
                       } catch (_) {
-                        if (!context.mounted) {
-                          return;
-                        }
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Failed to start sync.'),
-                          ),
-                        );
+                        // The sync notifier surfaces the error message.
                       }
                     },
-              child: syncing
+              child: syncState.isSyncing
                   ? const SizedBox(
                       width: 18,
                       height: 18,
@@ -341,19 +355,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ],
                 ),
-                data: (tracks) => ListView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  itemCount: tracks.length,
-                  itemBuilder: (context, index) {
-                    final track = tracks[index];
-                    return ListTile(
-                      title: Text(track.title),
-                      subtitle: Text(track.artist),
-                      trailing: _buildTrackTrailing(track),
-                      onTap: () => _showAddToPlaylistSheet(track),
+                data: (tracks) {
+                  if (tracks.isEmpty) {
+                    return ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        const SizedBox(height: 120),
+                        EmptyStateWidget(
+                          icon: hasActiveSearchOrFilters
+                              ? Icons.search_off
+                              : Icons.library_music_outlined,
+                          title: hasActiveSearchOrFilters
+                              ? 'No tracks found'
+                              : 'Your library is empty',
+                          subtitle: hasActiveSearchOrFilters
+                              ? 'No tracks found matching your search or filters.'
+                              : 'Tap Sync to import from Spotify.',
+                        ),
+                      ],
                     );
-                  },
-                ),
+                  }
+
+                  return ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: tracks.length,
+                    itemBuilder: (context, index) {
+                      final track = tracks[index];
+                      return ListTile(
+                        title: Text(track.title),
+                        subtitle: Text(track.artist),
+                        trailing: _buildTrackTrailing(track),
+                        onTap: () => _showAddToPlaylistSheet(track),
+                      );
+                    },
+                  );
+                },
               ),
             ),
           ),
