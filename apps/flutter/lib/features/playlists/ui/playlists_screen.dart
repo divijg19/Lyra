@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/ui/empty_state_widget.dart';
 import '../playlists_notifier.dart';
 
 class PlaylistsScreen extends ConsumerWidget {
@@ -153,9 +154,11 @@ class PlaylistsScreen extends ConsumerWidget {
               return ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: const [
-                  SizedBox(height: 180),
-                  Center(
-                    child: Text('No playlists yet. Create your first one.'),
+                  SizedBox(height: 120),
+                  EmptyStateWidget(
+                    icon: Icons.queue_music_outlined,
+                    title: 'No playlists yet',
+                    subtitle: 'Create one to organize your library.',
                   ),
                 ],
               );

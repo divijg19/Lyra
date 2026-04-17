@@ -1,17 +1,50 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/dio_provider.dart';
 import '../../core/network/lyra_endpoints.dart';
-import 'models/track_filters.dart';
 import 'models/track.dart';
+import 'models/track_filters.dart';
 
-final libraryNotifierProvider = NotifierProvider<LibraryNotifier, bool>(
-  LibraryNotifier.new,
-);
+const _unset = Object();
+
+final libraryNotifierProvider =
+    NotifierProvider<LibraryNotifier, LibrarySyncState>(LibraryNotifier.new);
 
 final semanticSearchModeProvider =
     NotifierProvider<SemanticSearchNotifier, bool>(SemanticSearchNotifier.new);
+
+class LibrarySyncState {
+  const LibrarySyncState({
+    this.syncStatus = 'IDLE',
+    this.lastSyncedAt,
+    this.errorMessage,
+  });
+
+  final String syncStatus;
+  final DateTime? lastSyncedAt;
+  final String? errorMessage;
+
+  bool get isSyncing => syncStatus == 'IN_PROGRESS';
+
+  LibrarySyncState copyWith({
+    String? syncStatus,
+    Object? lastSyncedAt = _unset,
+    Object? errorMessage = _unset,
+  }) {
+    return LibrarySyncState(
+      syncStatus: syncStatus ?? this.syncStatus,
+      lastSyncedAt: identical(lastSyncedAt, _unset)
+          ? this.lastSyncedAt
+          : lastSyncedAt as DateTime?,
+      errorMessage: identical(errorMessage, _unset)
+          ? this.errorMessage
+          : errorMessage as String?,
+    );
+  }
+}
 
 class SemanticSearchNotifier extends Notifier<bool> {
   @override
@@ -22,21 +55,130 @@ class SemanticSearchNotifier extends Notifier<bool> {
   }
 }
 
-class LibraryNotifier extends Notifier<bool> {
-  @override
-  bool build() => false;
+class LibraryNotifier extends Notifier<LibrarySyncState> {
+  Timer? _pollingTimer;
+  bool _isPollingRequestInFlight = false;
+  bool _didLoadInitialStatus = false;
 
-  Future<void> startSync() async {
-    state = true;
+  @override
+  LibrarySyncState build() {
+    ref.onDispose(_cancelPolling);
+    if (!_didLoadInitialStatus) {
+      _didLoadInitialStatus = true;
+      unawaited(_loadCurrentStatus());
+    }
+    return const LibrarySyncState();
+  }
+
+  Future<void> syncLibrary() async {
+    _cancelPolling();
+    state = state.copyWith(syncStatus: 'IN_PROGRESS', errorMessage: null);
+
     try {
       final dio = ref.read(dioProvider);
       final uri = ref.read(librarySyncUriProvider);
       await dio.post(uri.toString());
-    } finally {
-      // Keep spinner visible briefly so the user receives immediate feedback.
-      await Future<void>.delayed(const Duration(milliseconds: 450));
-      state = false;
+      _startPolling();
+    } on DioException catch (error) {
+      _setError(_extractSyncErrorMessage(error));
+      rethrow;
+    } catch (_) {
+      _setError('Failed to start sync.');
+      rethrow;
     }
+  }
+
+  void _startPolling() {
+    _cancelPolling();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      unawaited(_pollSyncStatus());
+    });
+    unawaited(_pollSyncStatus());
+  }
+
+  void _cancelPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+  }
+
+  Future<void> _loadCurrentStatus() async {
+    try {
+      await _pollSyncStatus(triggerRefreshOnIdle: false);
+    } catch (_) {
+      // Keep the library usable even if the sync status probe fails.
+    }
+  }
+
+  Future<void> _pollSyncStatus({bool triggerRefreshOnIdle = true}) async {
+    if (_isPollingRequestInFlight) {
+      return;
+    }
+
+    _isPollingRequestInFlight = true;
+    try {
+      final dio = ref.read(dioProvider);
+      final uri = ref.read(librarySyncStatusUriProvider);
+      final response = await dio.get(uri.toString());
+      final nextState = _parseSyncState(response.data as Map<String, dynamic>);
+      state = state.copyWith(
+        syncStatus: nextState.syncStatus,
+        lastSyncedAt: nextState.lastSyncedAt,
+        errorMessage: nextState.errorMessage,
+      );
+
+      if (nextState.syncStatus == 'IN_PROGRESS') {
+        if (_pollingTimer == null) {
+          _startPolling();
+        }
+        return;
+      }
+
+      _cancelPolling();
+
+      if (nextState.syncStatus == 'IDLE' && triggerRefreshOnIdle) {
+        unawaited(ref.read(tracksNotifierProvider.notifier).fetchTracks());
+      }
+    } on DioException {
+      // If polling hits a transient connectivity issue, keep the current state
+      // and allow the next timer tick to retry.
+    } finally {
+      _isPollingRequestInFlight = false;
+    }
+  }
+
+  LibrarySyncState _parseSyncState(Map<String, dynamic> json) {
+    final rawStatus = (json['sync_status'] as String? ?? 'IDLE').toUpperCase();
+    final lastSyncedAtRaw = json['last_synced_at'] as String?;
+    final lastSyncedAt = lastSyncedAtRaw == null
+        ? null
+        : DateTime.tryParse(lastSyncedAtRaw);
+
+    if (rawStatus == 'ERROR') {
+      return LibrarySyncState(
+        syncStatus: rawStatus,
+        lastSyncedAt: lastSyncedAt,
+        errorMessage: 'Library sync failed. Try syncing again.',
+      );
+    }
+
+    return LibrarySyncState(
+      syncStatus: rawStatus,
+      lastSyncedAt: lastSyncedAt,
+      errorMessage: null,
+    );
+  }
+
+  void _setError(String message) {
+    _cancelPolling();
+    state = state.copyWith(syncStatus: 'ERROR', errorMessage: message);
+  }
+
+  String _extractSyncErrorMessage(DioException error) {
+    final responseMessage = error.response?.data;
+    if (responseMessage case {'detail': final String detail}) {
+      return detail;
+    }
+    return 'Failed to start sync.';
   }
 }
 
@@ -52,6 +194,8 @@ class TracksNotifier extends AsyncNotifier<List<Track>> {
   TrackFilters get currentFilters => _currentFilters;
 
   bool get hasActiveFilters => _currentFilters.hasAnyFilter;
+
+  bool get hasActiveQuery => _currentSearchQuery?.isNotEmpty == true;
 
   @override
   Future<List<Track>> build() async {

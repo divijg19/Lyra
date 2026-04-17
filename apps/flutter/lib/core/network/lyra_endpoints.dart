@@ -12,6 +12,11 @@ final librarySyncUriProvider = Provider<Uri>((ref) {
   return Uri.parse('$baseUrl/library/sync');
 });
 
+final librarySyncStatusUriProvider = Provider<Uri>((ref) {
+  final baseUrl = ref.watch(lyraApiBaseUrlProvider);
+  return Uri.parse('$baseUrl/library/sync/status');
+});
+
 final libraryTracksUriProvider = Provider.family<Uri, ({int skip, int limit})>((
   ref,
   pagination,
