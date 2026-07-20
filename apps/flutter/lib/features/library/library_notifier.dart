@@ -13,6 +13,10 @@ const _unset = Object();
 final libraryNotifierProvider =
     NotifierProvider<LibraryNotifier, LibrarySyncState>(LibraryNotifier.new);
 
+final librarySyncPollIntervalProvider = Provider<Duration>((ref) {
+  return const Duration(seconds: 3);
+});
+
 final semanticSearchModeProvider =
     NotifierProvider<SemanticSearchNotifier, bool>(SemanticSearchNotifier.new);
 
@@ -90,7 +94,8 @@ class LibraryNotifier extends Notifier<LibrarySyncState> {
 
   void _startPolling() {
     _cancelPolling();
-    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+    final pollInterval = ref.read(librarySyncPollIntervalProvider);
+    _pollingTimer = Timer.periodic(pollInterval, (_) {
       unawaited(_pollSyncStatus());
     });
     unawaited(_pollSyncStatus());
